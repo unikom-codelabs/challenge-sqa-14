@@ -120,4 +120,60 @@ def test_simpan_user_ke_db(db_setup_teardown):
     assert row["password"] == test_hash, "Hash password di DB harus sesuai"
 
 
+from fastapi.testclient import TestClient
+from main import app
+
+client = TestClient(app)
+
+
+def test_api_register_success(db_setup_teardown):
+    connection = db_setup_teardown
+    payload = {"email": "user.api@domain.com", "password": "ValidPass123"}
+
+    # 1. Mengirim POST request ke /register
+    response = client.post("/register", json=payload)
+
+    # 2. Verifikasi HTTP Status Code 201 Created
+    assert (
+        response.status_code == 201
+    ), f"Expected 201 Created, got {response.status_code}"
+    assert response.json()["message"] == "User berhasil terdaftar"
+    assert response.json()["email"] == payload["email"]
+
+    # 3. Verifikasi data di database
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM users WHERE email = %s", (payload["email"],))
+        row = cursor.fetchone()
+
+    assert row is not None, "Data user dari API harus tersimpan di database"
+    assert row["email"] == payload["email"]
+
+
+def test_api_register_invalid_email_format():
+    payload = {"email": "usertanpadomain", "password": "ValidPass123"}
+
+    # Mengirim payload dengan format email yang salah
+    response = client.post("/register", json=payload)
+
+    # Verifikasi HTTP Status Code 422 Unprocessable Entity
+    assert (
+        response.status_code == 422
+    ), f"Expected 422 Unprocessable Entity, got {response.status_code}"
+
+
+def test_api_register_duplicate_email(db_setup_teardown):
+    payload = {"email": "duplicate@domain.com", "password": "ValidPass123"}
+
+    # Pendaftaran pertama (harus 201)
+    response1 = client.post("/register", json=payload)
+    assert response1.status_code == 201
+
+    # Pendaftaran kedua dengan email sama (harus 400 Bad Request)
+    response2 = client.post("/register", json=payload)
+    assert (
+        response2.status_code == 400
+    ), f"Expected 400 Bad Request, got {response2.status_code}"
+
+
+
 
