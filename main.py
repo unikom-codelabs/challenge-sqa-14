@@ -1,3 +1,15 @@
+import re
+
+
+def is_email_valid(email: str) -> bool:
+    """
+    Memvalidasi format email menggunakan Regular Expression.
+    Format harus memiliki karakter local part, '@', domain, dan TLD valid.
+    """
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email))
+
+
 def is_password_valid(password: str) -> bool:
     """
     Memvalidasi kata sandi berdasarkan 3 aturan dasar SQA:
@@ -12,3 +24,4 @@ def is_password_valid(password: str) -> bool:
     if not any(char.isdigit() for char in password):
         return False
     return True
+
