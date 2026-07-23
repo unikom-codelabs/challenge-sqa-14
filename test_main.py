@@ -1,9 +1,11 @@
 import pytest
 
 from main import (
+    get_db_connection,
     hash_password,
     is_email_valid,
     is_password_valid,
+    simpan_user_ke_db,
     verify_password,
 )
 
@@ -68,5 +70,54 @@ def test_password_hashing():
     assert (
         verify_password("PasswordSalah123", hashed) is False
     ), "Password salah tidak boleh cocok dengan hash"
+
+
+@pytest.fixture(scope="function")
+def db_setup_teardown():
+    """
+    Fixture Pytest untuk Setup dan Teardown database integration testing.
+    Setup: Memastikan koneksi dan membuat tabel users.
+    Teardown: Menghapus tabel users setelah tes selesai.
+    """
+    connection = get_db_connection()
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        cursor.execute("TRUNCATE TABLE users")
+
+    yield connection
+
+    # Teardown
+    with connection.cursor() as cursor:
+        cursor.execute("DROP TABLE IF EXISTS users")
+    connection.close()
+
+
+def test_simpan_user_ke_db(db_setup_teardown):
+    connection = db_setup_teardown
+    test_email = "testuser@domain.com"
+    test_hash = hash_password("ValidPass123")
+
+    # 1. Simpan user ke DB
+    result = simpan_user_ke_db(test_email, test_hash)
+    assert result is True, "Pengembalian fungsi simpan_user_ke_db harus True"
+
+    # 2. Verifikasi dengan query SELECT
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM users WHERE email = %s", (test_email,))
+        row = cursor.fetchone()
+
+    assert row is not None, "Data user harus ditemukan di database"
+    assert row["email"] == test_email, f"Email di DB harus {test_email}"
+    assert row["password"] == test_hash, "Hash password di DB harus sesuai"
+
 
 
