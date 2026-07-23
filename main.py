@@ -100,4 +100,57 @@ def simpan_user_ke_db(email: str, hashed_password: str) -> bool:
         return False
 
 
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, field_validator
+
+
+app = FastAPI(
+    title="SQA User Registration API",
+    description="API Registrasi Pengguna untuk SQA Demo",
+)
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email_field(cls, v: str) -> str:
+        if not is_email_valid(v):
+            raise ValueError("Format email tidak valid")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_field(cls, v: str) -> str:
+        if not is_password_valid(v):
+            raise ValueError("Format password tidak memenuhi kriteria SQA")
+        return v
+
+
+@app.post("/register", status_code=status.HTTP_201_CREATED)
+def register_user(request: RegisterRequest):
+    """
+    Endpoint registrasi pengguna.
+    - Status 201 Created: sukses mendaftar
+    - Status 400 Bad Request: duplikasi data/gagal simpan
+    - Status 422 Unprocessable Entity: kegagalan validasi Pydantic
+    """
+    hashed = hash_password(request.password)
+    sukses = simpan_user_ke_db(request.email, hashed)
+
+    if not sukses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Gagal menyimpan user ke database. Email mungkin sudah terdaftar.",
+        )
+
+    return {
+        "message": "User berhasil terdaftar",
+        "email": request.email,
+    }
+
+
+
 
