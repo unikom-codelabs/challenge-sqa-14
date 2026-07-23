@@ -1,6 +1,50 @@
 import pytest
 
-from main import hash_password, is_email_valid, is_password_valid, verify_password
+from main import (
+    get_db_connection,
+    hash_password,
+    is_email_valid,
+    is_password_valid,
+    simpan_user_ke_db,
+    verify_password,
+)
+
+
+@pytest.fixture(autouse=True)
+def setup_mysql_db(request):
+    """
+    Fixture untuk Setup (membuat tabel users) dan Teardown (menghapus tabel users setelah tes).
+    """
+    db_conn = None
+    try:
+        db_conn = get_db_connection(connect_timeout=1)
+        with db_conn:
+            with db_conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        email VARCHAR(255) NOT NULL UNIQUE,
+                        password VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """
+                )
+    except Exception as e:
+        if "simpan_user" in request.node.name or "register" in request.node.name:
+            pytest.skip(f"MySQL database tidak tersedia: {e}")
+
+    yield
+
+    if db_conn:
+        try:
+            conn = get_db_connection(connect_timeout=1)
+            with conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("DROP TABLE IF EXISTS users")
+        except Exception:
+            pass
+
 
 
 @pytest.mark.parametrize(
@@ -63,5 +107,26 @@ def test_password_verification():
 
     # Acceptance Criteria 3: verify_password False untuk password yang salah
     assert verify_password(wrong_password, hashed) is False, "verifikasi password salah harus False"
+
+
+def test_simpan_user_ke_db():
+    email = "user.test@kampus.ac.id"
+    raw_pass = "ValidPass123"
+    hashed = hash_password(raw_pass)
+
+    success = simpan_user_ke_db(email, hashed)
+    assert success is True, "Penyimpanan data ke MySQL harus mengembalikan True"
+
+    # Verifikasi dengan SELECT dari database
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+            result = cursor.fetchone()
+
+    assert result is not None, "Data user harus ditemukan di database"
+    assert result["email"] == email, "Email tersimpan harus sesuai"
+    assert result["password"] == hashed, "Password hash tersimpan harus sesuai"
+
 
 
