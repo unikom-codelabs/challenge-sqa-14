@@ -1,6 +1,6 @@
 import pytest
 
-from main import is_password_valid
+from main import is_email_valid, is_password_valid
 
 
 @pytest.mark.parametrize(
@@ -24,3 +24,23 @@ def test_password_rules(password, expected, deskripsi_sqa):
     result = is_password_valid(password)
 
     assert result == expected, f"Gagal pada skenario: {deskripsi_sqa}"
+
+
+@pytest.mark.parametrize(
+    "email, expected, deskripsi_sqa",
+    [
+        # --- POSITIVE TESTING ---
+        ("mahasiswa@kampus.ac.id", True, "Lulus: Format email valid dengan TLD ac.id"),
+        ("user.name@domain.com", True, "Lulus: Format email valid dengan nama titik"),
+        # --- NEGATIVE TESTING ---
+        ("usertanpadomain", False, "Gagal: Tidak memiliki karakter @ dan domain"),
+        ("user@.com", False, "Gagal: Domain langsung diawali titik"),
+        ("@domain.com", False, "Gagal: Karakter lokal di depan @ kosong"),
+        ("user@domain", False, "Gagal: Tidak memiliki TLD (misal: .com, .id)"),
+    ],
+)
+def test_email_rules(email, expected, deskripsi_sqa):
+    result = is_email_valid(email)
+
+    assert result == expected, f"Gagal pada skenario: {deskripsi_sqa}"
+
