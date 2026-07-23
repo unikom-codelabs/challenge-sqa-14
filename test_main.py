@@ -1,6 +1,8 @@
 import pytest
+from fastapi.testclient import TestClient
 
 from main import (
+    app,
     get_db_connection,
     hash_password,
     is_email_valid,
@@ -8,6 +10,8 @@ from main import (
     simpan_user_ke_db,
     verify_password,
 )
+
+client = TestClient(app)
 
 
 @pytest.fixture(autouse=True)
@@ -31,7 +35,7 @@ def setup_mysql_db(request):
                 """
                 )
     except Exception as e:
-        if "simpan_user" in request.node.name or "register" in request.node.name:
+        if "simpan_user" in request.node.name or "test_api_register_success" in request.node.name:
             pytest.skip(f"MySQL database tidak tersedia: {e}")
 
     yield
@@ -44,7 +48,6 @@ def setup_mysql_db(request):
                     cursor.execute("DROP TABLE IF EXISTS users")
         except Exception:
             pass
-
 
 
 @pytest.mark.parametrize(
@@ -127,6 +130,26 @@ def test_simpan_user_ke_db():
     assert result is not None, "Data user harus ditemukan di database"
     assert result["email"] == email, "Email tersimpan harus sesuai"
     assert result["password"] == hashed, "Password hash tersimpan harus sesuai"
+
+
+def test_api_register_success():
+    payload = {
+        "email": "user.api@kampus.ac.id",
+        "password": "ValidPass123",
+    }
+    response = client.post("/register", json=payload)
+    assert response.status_code == 201, "POST /register dengan input valid harus 201 Created"
+    assert response.json()["email"] == payload["email"]
+
+
+def test_api_register_invalid_email():
+    payload = {
+        "email": "usertanpadomain",
+        "password": "ValidPass123",
+    }
+    response = client.post("/register", json=payload)
+    assert response.status_code == 422, "POST /register email invalid harus 422 Unprocessable Entity"
+
 
 
 
