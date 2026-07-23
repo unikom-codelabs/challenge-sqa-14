@@ -28,3 +28,24 @@ def is_email_valid(email: str) -> bool:
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$"
     return bool(re.match(pattern, email.strip()))
 
+
+import bcrypt
+
+
+def hash_password(password: str) -> str:
+    """
+    Mengenkripsi kata sandi menggunakan algoritma bcrypt.
+    """
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Memverifikasi kecocokan kata sandi asli dengan hash kata sandi.
+    """
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
+
+
