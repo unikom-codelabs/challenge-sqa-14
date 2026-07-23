@@ -1,18 +1,23 @@
 [project]
 name = "sqa-14"
 version = "0.1.0"
-description = "Add your description here"
+description = "SQA challenge: validation, hashing, MySQL integration, and FastAPI"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi[standard]>=0.139.2",
+    "fastapi[standard]>=0.115.0",
     "passlib>=1.7.4",
-    "pymysql>=1.2.0",
+    "pymysql>=1.1.1",
 ]
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
-    "pytest>=9.1.1",
-    "pytest-cov>=7.1.0",
+    "httpx>=0.27.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+python_files = ["test_*.py"]
+addopts = "-ra"
