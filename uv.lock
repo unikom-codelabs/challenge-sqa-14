@@ -879,7 +879,7 @@ wheels = [
 ]
 
 [[package]]
-name = "sqa-15"
+name = "sqa-14"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
@@ -897,16 +897,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.139.2" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.115.0" },
     { name = "passlib", specifier = ">=1.7.4" },
-    { name = "pymysql", specifier = ">=1.2.0" },
+    { name = "pymysql", specifier = ">=1.1.1" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "pytest-cov", specifier = ">=7.1.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-cov", specifier = ">=5.0.0" },
 ]
 
 [[package]]
